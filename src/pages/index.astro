@@ -1,0 +1,669 @@
+---
+import Base from '../layouts/Base.astro';
+import Studio from '../components/Studio.svelte';
+
+const base = import.meta.env.BASE_URL;
+const repo = 'https://github.com/shubhamtatvamasi/tape';
+---
+
+<Base
+  title="Tape — a private screen recorder for your browser"
+  description="Record a screen, window or tab and save it locally. Choose the output size, mix system audio and microphone, and keep every frame on your machine."
+>
+  <header class="topbar wrap" id="top">
+    <a class="brand" href={base} aria-label="Tape home">
+      <span class="mark" aria-hidden="true"><span class="dot"></span></span>
+      <span class="brand-text">
+        <span class="wordmark">tape</span>
+        <span class="brand-sub mono">screen recorder</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="Main">
+      <a class="nav-link" href="#details">How it works</a>
+      <a class="nav-link" href={repo} target="_blank" rel="noreferrer">GitHub</a>
+      <span class="local-badge mono"><span class="local-dot"></span>100% local</span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero wrap">
+      <div class="hero-copy">
+        <p class="eyebrow mono"><span class="eyebrow-dot"></span>RECORDER / 01<span class="eyebrow-sep">—</span>NO UPLOADS</p>
+        <h1>
+          Record the screen.<br />
+          <span class="h1-dim">Keep the file.</span>
+        </h1>
+        <p class="lede">
+          A small, deliberate screen recorder for the browser. Capture a screen, window or tab,
+          pick your output size, mix narration with system sound — and download the video.
+          It never leaves your machine.
+        </p>
+        <ul class="facts mono" aria-label="Highlights">
+          <li>MP4 / WebM</li>
+          <li>Up to 4K</li>
+          <li>Mic + system audio</li>
+          <li>Pause &amp; resume</li>
+        </ul>
+      </div>
+
+      <div class="hero-side" aria-hidden="true">
+        <div class="stamp">
+          <span class="stamp-top mono">TAPE NO. 01</span>
+          <span class="stamp-reel"></span>
+          <span class="stamp-bottom mono">SIDE A · LOCAL</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="studio-section wrap" aria-label="Screen recorder">
+      <Studio client:load />
+    </section>
+
+    <section id="details" class="details wrap">
+      <div class="details-head">
+        <p class="eyebrow mono"><span class="eyebrow-dot"></span>THE FINE PRINT</p>
+        <h2>Small tool. Few surprises.</h2>
+      </div>
+
+      <div class="cards">
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4.5 6v5.2c0 4.4 3.1 8.3 7.5 9.8 4.4-1.5 7.5-5.4 7.5-9.8V6L12 3Z"/><path d="m9 11.8 2.1 2.2L15.4 9.8"/></svg>
+          </div>
+          <h3>Private by architecture</h3>
+          <p>
+            Capture, mixing and encoding all run in this tab. There is no upload endpoint, no
+            analytics and no account. Close the tab and the recording is gone from the web.
+          </p>
+        </article>
+
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4M7 10.5h3M14 10.5h3"/></svg>
+          </div>
+          <h3>Size is a ceiling</h3>
+          <p>
+            Browsers never crop or upscale a shared display, so the size you pick is a bounding box.
+            Tape reports the exact captured resolution while you record, and preserves the source
+            aspect ratio.
+          </p>
+        </article>
+
+        <article class="card">
+          <div class="card-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h9l3 3v6"/><path d="M14 3v4h4"/><rect x="3" y="12" width="18" height="9" rx="2"/><path d="M7 16.5h2M11.5 16.5h2M16 16.5h1"/></svg>
+          </div>
+          <h3>Long takes, two ways</h3>
+          <p>
+            Short recordings live in memory so you can preview them instantly. For long sessions,
+            Chromium browsers can write chunks straight to a file you choose — memory stays flat,
+            and the take is already on disk.
+          </p>
+        </article>
+      </div>
+
+      <details class="support">
+        <summary>
+          <span>Browser notes</span>
+          <span class="summary-hint mono">what works where</span>
+          <svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="support-body">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Browser</th>
+                <th scope="col">Capture</th>
+                <th scope="col">Formats</th>
+                <th scope="col">Write to disk</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Chrome / Edge</td>
+                <td>Screen, window, tab</td>
+                <td>MP4 (platform encoder) or WebM</td>
+                <td>Yes</td>
+              </tr>
+              <tr>
+                <td>Firefox</td>
+                <td>Screen, window</td>
+                <td>WebM</td>
+                <td>Falls back to memory</td>
+              </tr>
+              <tr>
+                <td>Safari 18.4+</td>
+                <td>Screen, window, tab</td>
+                <td>MP4 or WebM</td>
+                <td>Falls back to memory</td>
+              </tr>
+              <tr>
+                <td>iOS / Android</td>
+                <td colspan="3">Screen capture is not exposed by most mobile browsers — use a desktop browser.</td>
+              </tr>
+            </tbody>
+          </table>
+          <ul class="support-notes">
+            <li><strong>System audio</strong> is captured on Chromium — tab audio everywhere (tick “Also share tab audio” in the picker), whole-system audio where the OS exposes it. Firefox and Safari record microphone audio only.</li>
+            <li><strong>MP4</strong> requires a local H.264/AAC encoder. When it is missing, Tape records WebM without asking twice.</li>
+            <li><strong>Recording limit</strong> in memory is roughly 20 minutes at 1080p on a typical machine. Use “Write to disk” for anything longer.</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer class="footer wrap">
+    <div class="footer-left">
+      <span class="footer-mark" aria-hidden="true"><span class="dot"></span></span>
+      <span class="wordmark small">tape</span>
+      <span class="footer-sep">·</span>
+      <span class="mono muted">no accounts. no uploads. no analytics.</span>
+    </div>
+    <div class="footer-right mono">
+      <span>Built with Astro + Svelte</span>
+      <a href="#top" class="top-link">Back to top ↑</a>
+    </div>
+  </footer>
+</Base>
+
+<style>
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    padding-top: 26px;
+    padding-bottom: 26px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+  }
+
+  .mark,
+  .footer-mark {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 1px solid var(--line-strong);
+    border-radius: 8px;
+    background: linear-gradient(160deg, #181b21, #0c0e11);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  }
+
+  .mark .dot,
+  .footer-mark .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--rec);
+    box-shadow: 0 0 12px rgba(255, 75, 62, 0.65);
+  }
+
+  .brand-text {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+  }
+
+  .wordmark {
+    font-size: 19px;
+    font-weight: 620;
+    letter-spacing: -0.035em;
+    line-height: 1;
+  }
+
+  .brand-sub {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .nav {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+  }
+
+  .nav-link {
+    font-size: 13px;
+    color: var(--text-dim);
+    transition: color 0.18s var(--ease);
+  }
+
+  .nav-link:hover {
+    color: var(--text);
+  }
+
+  .local-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 9px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .local-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--ok);
+    box-shadow: 0 0 6px rgba(140, 224, 176, 0.5);
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 40px;
+    padding-top: 30px;
+    padding-bottom: 30px;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .eyebrow-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--rec);
+  }
+
+  .eyebrow-sep {
+    color: var(--line-strong);
+  }
+
+  h1 {
+    margin-top: 20px;
+    font-size: clamp(2.5rem, 5.4vw, 4.15rem);
+    line-height: 0.98;
+    letter-spacing: -0.045em;
+    font-weight: 560;
+    max-width: 16ch;
+  }
+
+  .h1-dim {
+    color: #8c8e94;
+    font-weight: 480;
+  }
+
+  .lede {
+    margin-top: 22px;
+    max-width: 58ch;
+    font-size: 15.5px;
+    line-height: 1.62;
+    color: var(--text-dim);
+  }
+
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .facts li {
+    display: flex;
+    align-items: center;
+  }
+
+  .facts li + li::before {
+    content: '';
+    width: 1px;
+    height: 10px;
+    margin: 0 12px;
+    background: var(--line);
+  }
+
+  .hero-side {
+    padding-bottom: 8px;
+  }
+
+  .stamp {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 132px;
+    height: 168px;
+    padding: 14px 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 30%),
+      #101216;
+    transform: rotate(3.5deg);
+    box-shadow: var(--shadow);
+    opacity: 0.92;
+  }
+
+  .stamp-top,
+  .stamp-bottom {
+    font-size: 7.5px;
+    letter-spacing: 0.14em;
+    color: var(--text-faint);
+  }
+
+  .stamp-reel {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, var(--rec) 0 12%, transparent 13%),
+      repeating-conic-gradient(from 0deg, #1c2027 0deg 26deg, #12151a 26deg 52deg);
+  }
+
+  .stamp-reel::after {
+    content: '';
+    position: absolute;
+    inset: 20px;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: #0d0f13;
+  }
+
+  .studio-section {
+    padding-bottom: 56px;
+  }
+
+  .details {
+    padding-top: 34px;
+    padding-bottom: 30px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .details-head h2 {
+    margin-top: 14px;
+    font-size: clamp(1.5rem, 2.6vw, 2rem);
+    font-weight: 550;
+    letter-spacing: -0.035em;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 30px;
+  }
+
+  .card {
+    padding: 22px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 55%), var(--ink-raised);
+  }
+
+  .card-icon {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    margin-bottom: 26px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    color: var(--rec-bright);
+    background: rgba(255, 75, 62, 0.06);
+  }
+
+  .card h3 {
+    font-size: 14.5px;
+    font-weight: 580;
+    letter-spacing: -0.01em;
+  }
+
+  .card p {
+    margin-top: 9px;
+    font-size: 13px;
+    line-height: 1.62;
+    color: var(--text-dim);
+  }
+
+  .support {
+    margin-top: 22px;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background: var(--ink-raised);
+    overflow: hidden;
+  }
+
+  .support summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 13.5px;
+    font-weight: 540;
+  }
+
+  .support summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .summary-hint {
+    margin-left: auto;
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .chevron {
+    color: var(--text-faint);
+    transition: transform 0.2s var(--ease);
+  }
+
+  .support[open] .chevron {
+    transform: rotate(180deg);
+  }
+
+  .support-body {
+    padding: 0 20px 20px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+
+  th,
+  td {
+    padding: 10px 12px 10px 0;
+    text-align: left;
+    vertical-align: top;
+    border-top: 1px solid var(--line-soft);
+    color: var(--text-dim);
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: 8.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  td:first-child {
+    color: var(--text);
+    font-weight: 520;
+  }
+
+  .support-notes {
+    display: grid;
+    gap: 7px;
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text-dim);
+  }
+
+  .support-notes strong {
+    color: var(--text);
+    font-weight: 550;
+  }
+
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding-top: 22px;
+    padding-bottom: 34px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .footer-left,
+  .footer-right {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  .footer-right {
+    gap: 18px;
+  }
+
+  .footer-mark {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+  }
+
+  .footer-mark .dot {
+    width: 7px;
+    height: 7px;
+  }
+
+  .wordmark.small {
+    font-size: 14px;
+  }
+
+  .footer-sep {
+    color: var(--line-strong);
+  }
+
+  .muted {
+    color: var(--text-faint);
+  }
+
+  .top-link {
+    color: var(--text-dim);
+    transition: color 0.18s var(--ease);
+  }
+
+  .top-link:hover {
+    color: var(--text);
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      grid-template-columns: 1fr;
+      padding-top: 26px;
+    }
+
+    .hero-side {
+      display: none;
+    }
+
+    .cards {
+      grid-template-columns: 1fr;
+    }
+
+    .card-icon {
+      margin-bottom: 18px;
+    }
+
+    .nav-link {
+      display: none;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .topbar {
+      padding-top: 20px;
+      padding-bottom: 20px;
+    }
+
+    .brand-sub {
+      display: none;
+    }
+
+    .local-badge {
+      font-size: 8.5px;
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 10vw, 2.9rem);
+    }
+
+    .lede {
+      font-size: 14.5px;
+    }
+
+    .facts {
+      gap: 6px 0;
+    }
+
+    .facts li + li::before {
+      margin: 0 9px;
+    }
+
+    .kbd-hint {
+      display: none;
+    }
+
+    .footer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .footer-left {
+      flex-wrap: wrap;
+    }
+
+    .footer-right {
+      gap: 14px;
+    }
+
+    .summary-hint {
+      display: none;
+    }
+  }
+</style>
