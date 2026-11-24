@@ -253,7 +253,7 @@ export class RecorderEngine {
       display.removeTrack(systemTrack);
     }
     if (options.systemAudio && !systemTrack) {
-      this.noticeParts.push('No system audio came through the share picker.');
+      this.noticeParts.push('No system audio was captured. In Chrome, tick “Also share tab audio” in the picker.');
     }
 
     const audioTracks: MediaStreamTrack[] = [];

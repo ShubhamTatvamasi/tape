@@ -53,6 +53,9 @@
     <circle cx="12" cy="12" r="6" />
   {:else if name === 'download'}
     <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />
+  {:else if name === 'share'}
+    <path d="M12 16V4M8 8l4-4 4 4" />
+    <path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
   {:else if name === 'trash'}
     <path d="M4 7h16M9 7V4h6v3M6.5 7l1 14h9l1-14M10 11v6M14 11v6" />
   {:else if name === 'disk'}

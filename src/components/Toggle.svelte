@@ -37,6 +37,14 @@
       border-color 0.2s var(--ease);
   }
 
+  /* Extend the hit area without changing the visual size. */
+  .toggle::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 999px;
+  }
+
   .toggle::after {
     content: '';
     position: absolute;
@@ -78,5 +86,27 @@
   .toggle:disabled {
     opacity: 0.75;
     cursor: not-allowed;
+  }
+
+  @media (max-width: 620px) {
+    .toggle {
+      width: 40px;
+      height: 24px;
+    }
+
+    .toggle::before {
+      inset: -10px;
+    }
+
+    .knob {
+      top: 4px;
+      left: 4px;
+      width: 14px;
+      height: 14px;
+    }
+
+    .on .knob {
+      transform: translateX(16px);
+    }
   }
 </style>

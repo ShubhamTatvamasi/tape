@@ -31,6 +31,10 @@ The app name, package name, and repository name are all **Tape**, so the public 
 - **Audio** — system/tab audio and microphone, mixed into one track with the Web Audio API.
   Microphone gain, live level meter and a mute button.
 - **Pause & resume**, a countdown, a live timer, and a running file-size readout.
+- **Play overlay and preview** — a large play affordance on the finished take, a poster frame,
+  and native controls once playback starts.
+- **Mobile-aware saving** — a share-sheet action when the browser supports sharing files, so
+  recordings can be sent to Files, Photos or another app.
 - **MP4 or WebM**, chosen from what the browser can actually encode (`MediaRecorder.isTypeSupported`).
   Auto prefers MP4 for sharing; WebM is the reliable fallback.
 - **Two save modes**
@@ -151,10 +155,13 @@ is named `tape`, and the path follows the repo name automatically.
 | Chrome / Edge | screen, window, tab | MP4 (platform encoder) or WebM | Yes (`showSaveFilePicker`) |
 | Firefox | screen, window | WebM | No; falls back to memory |
 | Safari 18.4+ | screen, window, tab | MP4 or WebM | No; falls back to memory |
-| iOS / Android | not exposed | — | — |
+| iOS / Android | most mobile browsers do not expose `getDisplayMedia`; the app detects this and shows a clear unsupported state instead of a broken recorder | — | — |
 
 - Screen capture needs a secure context (HTTPS or localhost).
 - System audio is Chromium territory; Firefox and Safari give microphone audio only.
+- On mobile, Chrome/Firefox do not expose screen capture. If a browser does expose it (some recent
+  Safari versions on iOS do), the full recorder, preview and share sheet are available. Otherwise
+  the page explains the limitation and points at a desktop browser.
 - In-memory takes are comfortable to roughly 20 minutes at 1080p. Use disk streaming for longer.
 - Wake lock keeps the display awake during a take where the browser supports it, but it cannot stop
   the OS from sleeping if the user closes the lid.

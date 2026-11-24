@@ -45,6 +45,11 @@
     { value: 5, label: '5s' },
   ];
 
+  interface ShareCapableNavigator extends Navigator {
+    canShare?: (data: { files?: File[] }) => boolean;
+    share?: (data: { files?: File[]; title?: string; text?: string }) => Promise<void>;
+  }
+
   const INITIAL: RecorderSnapshot = {
     status: 'idle',
     elapsedMs: 0,
@@ -71,6 +76,9 @@
   let isPickingFile = $state(false);
   let fileError = $state<string | null>(null);
   let stageVideo = $state<HTMLVideoElement | null>(null);
+  let playerVideo = $state<HTMLVideoElement | null>(null);
+  let playerStarted = $state(false);
+  let canShareFiles = $state(false);
   let downloadedId = $state<string | null>(null);
 
   const status = $derived(snapshot.status);
@@ -147,6 +155,11 @@
       : sizeSummary,
   );
   const liveFrameRate = $derived(snapshot.live?.frameRate ?? settings.frameRate);
+  const memoryWarning = $derived(
+    (isRecording || isPaused)
+    && settings.destination === 'memory'
+    && snapshot.bytes > 500 * 1024 * 1024,
+  );
   const announcement = $derived(
     status === 'recording'
       ? 'Recording started.'
@@ -162,12 +175,23 @@
   onMount(() => {
     support = detectSupport();
 
+    try {
+      const shareType = support?.preferred === 'mp4' ? 'video/mp4' : 'video/webm';
+      const extension = shareType === 'video/mp4' ? 'mp4' : 'webm';
+      const probe = new File([new Blob(['tape'])], `tape.${extension}`, { type: shareType });
+      const nav = navigator as ShareCapableNavigator;
+      canShareFiles = typeof nav.share === 'function' && !!nav.canShare?.({ files: [probe] });
+    } catch {
+      canShareFiles = false;
+    }
+
     const instance = new RecorderEngine({
       onUpdate: (next) => {
         snapshot = next;
       },
       onTake: (take) => {
         takes = [take, ...takes];
+        playerStarted = false;
       },
     });
 
@@ -319,6 +343,37 @@
     else engine.pause();
   }
 
+  async function playTake(): Promise<void> {
+    try {
+      await playerVideo?.play();
+    } catch {
+      // The native controls surface playback errors.
+    }
+  }
+
+  async function shareTake(take: RecordingTake): Promise<void> {
+    const nav = navigator as ShareCapableNavigator;
+    if (!nav.share) return;
+    try {
+      let file = take.file;
+      if (!file) {
+        const response = await fetch(take.url);
+        const blob = await response.blob();
+        const type = take.mimeType.split(';')[0]?.trim() || 'video/webm';
+        file = new File([blob], take.name, { type });
+      }
+      if (nav.canShare && !nav.canShare({ files: [file] })) {
+        downloadTake(take);
+        return;
+      }
+      await nav.share({ files: [file], title: take.name });
+    } catch (error) {
+      if ((error as DOMException | undefined)?.name !== 'AbortError') {
+        downloadTake(take);
+      }
+    }
+  }
+
   function stopRecording(): void {
     void engine?.stop();
   }
@@ -368,8 +423,7 @@
     if (target && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable)) return;
 
     const key = event.key.toLowerCase();
-    if (key === 'r') {
-      event.preventDefault();
+    if (key === 'r') {      event.preventDefault();
       if (isPaused) engine?.resume();
       else if (!isBusy) primaryAction();
     } else if (key === 'p') {
@@ -419,8 +473,8 @@
         <span class="mono dim">{snapshot.live.frameRate} FPS</span>
       {:else}
         <span class="mono dim">LOCAL ONLY</span>
-        {#if !isBusy}
-          <button type="button" class="chrome-record" onclick={primaryAction} disabled={!support?.ready}>
+        {#if !isBusy && support?.ready}
+          <button type="button" class="chrome-record" onclick={primaryAction}>
             <span class="chrome-rec-dot" aria-hidden="true"></span>
             Record
           </button>
@@ -429,7 +483,7 @@
     </div>
   </div>
 
-  <div class="studio-body">
+  <div class="studio-body" class:unsupported={!!support && !support.ready}>
     <div class="stage">
       <div class="stage-view" class:is-live={isBusy}>
         {#if currentTake}
@@ -439,16 +493,26 @@
               style={`--ar: ${currentTake.width > 0 && currentTake.height > 0 ? (currentTake.width / currentTake.height).toFixed(4) : '1.7778'}`}
             >
               <video
+                bind:this={playerVideo}
                 class="player"
                 src={currentTake.url}
                 poster={currentTake.posterUrl ?? undefined}
-                controls
+                controls={playerStarted}
                 playsinline
                 preload="metadata"
                 onloadedmetadata={fixDuration}
+                onplay={() => (playerStarted = true)}
               ></video>
             </div>
             <span class="take-badge mono"><span class="badge-dot"></span>TAKE {String(takes.length).padStart(2, '0')} READY</span>
+            {#if !playerStarted}
+              <div class="play-overlay">
+                <button type="button" class="play-button" aria-label="Play recording" onclick={playTake}>
+                  <Icon name="play" size={28} />
+                </button>
+                <span class="play-label mono">PLAY TAKE</span>
+              </div>
+            {/if}
           </div>
         {:else if snapshot.previewStream}
           <video class="stage-video" bind:this={stageVideo} muted playsinline></video>
@@ -488,8 +552,15 @@
             </div>
           {/if}
 
-          {#if (isRecording || isPaused) && snapshot.notice}
-            <p class="stage-notice"><Icon name="alert" size={12} />{snapshot.notice}</p>
+          {#if (isRecording || isPaused) && (memoryWarning || snapshot.notice)}
+            <p class="stage-notice">
+              <Icon name="alert" size={12} />
+              {#if memoryWarning}
+                This take is over 500 MB in memory. For long sessions, use “To disk” next time.
+              {:else}
+                {snapshot.notice}
+              {/if}
+            </p>
           {/if}
 
           {#if isRecording || isPaused}
@@ -497,7 +568,7 @@
               <div class="dock-timer">
                 <span class="pulse-dot" class:paused={isPaused}></span>
                 <span class="mono timer">{formatDuration(snapshot.elapsedMs, true)}</span>
-                <span class="dock-size mono" class:heavy={snapshot.bytes > 750 * 1024 * 1024}>{formatBytes(snapshot.bytes)}</span>
+                <span class="dock-size mono" class:heavy={snapshot.bytes > 500 * 1024 * 1024}>{formatBytes(snapshot.bytes)}</span>
                 {#if isPaused}<span class="dock-tag mono">PAUSED</span>{/if}
                 {#if snapshot.sinkName}<span class="dock-sink mono" title={snapshot.sinkName}><Icon name="disk" size={11} />{snapshot.sinkName}</span>{/if}
               </div>
@@ -569,12 +640,17 @@
             <p class="idle-copy">
               {#if !support.secureContext}
                 Screen capture needs a secure context — open this page over HTTPS or on localhost.
-              {:else if support.mobile}
-                Mobile browsers don't expose screen capture. Use a desktop browser instead.
+              {:else if !support.displayMedia}
+                This browser doesn't expose screen capture. Mobile Chrome and Firefox don't support it; try desktop Chrome, Edge, Firefox or Safari 18.4+.
+              {:else if !support.mediaRecorder}
+                This browser can capture the screen but can't record it. Try desktop Chrome, Edge, Firefox or Safari 18.4+.
               {:else}
-                Try desktop Chrome, Edge, Firefox or Safari 18.4+. Screen capture and MediaRecorder are both required.
+                This browser can't encode MP4 or WebM. Try a Chromium browser or Safari 18.4+.
               {/if}
             </p>
+            <div class="idle-actions">
+              <a class="btn ghost" href="#details">Browser notes</a>
+            </div>
           </div>
         {:else}
           <div class="idle">
@@ -598,9 +674,6 @@
               </button>
               <span class="kbd-hint mono">press <kbd>R</kbd></span>
             </div>
-            {#if support?.mobile}
-              <p class="idle-hint">Screen capture is a desktop feature — this page will not work on mobile.</p>
-            {/if}
           </div>
         {/if}
       </div>
@@ -624,6 +697,12 @@
             </span>
           </div>
           <div class="take-actions">
+            {#if canShareFiles}
+              <button type="button" class="btn ghost" onclick={() => shareTake(currentTake)}>
+                <Icon name="share" size={15} />
+                Share
+              </button>
+            {/if}
             <button type="button" class="btn ghost icon-only" aria-label="Delete this take" title="Delete this take" onclick={() => removeTake(currentTake)}>
               <Icon name="trash" size={15} />
             </button>
@@ -674,7 +753,7 @@
               <div class="row">
                 <div class="row-copy">
                   <span class="row-label">System audio</span>
-                  <span class="row-hint">Tab, window or desktop sound</span>
+                  <span class="row-hint">Chrome: tick “Also share tab audio”</span>
                 </div>
                 <Toggle
                   checked={settings.systemAudio}
@@ -1029,13 +1108,13 @@
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    height: 23px;
+    height: 28px;
     margin-left: 3px;
-    padding: 0 8px;
+    padding: 0 9px;
     border-radius: 5px;
     background: var(--rec);
     color: #170403;
-    font-size: 8.5px;
+    font-size: 9px;
     font-weight: 650;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -1062,13 +1141,25 @@
   }
 
   .dim {
-    color: #5f646d;
+    color: #757a84;
   }
 
   .studio-body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 384px;
     height: 760px;
+  }
+
+  .studio-body.unsupported {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .studio-body.unsupported .settings {
+    display: none;
+  }
+
+  .studio-body.unsupported .stage {
+    min-height: 100%;
   }
 
   .stage {
@@ -1082,7 +1173,6 @@
     position: relative;
     flex: 1;
     min-height: 0;
-    container-type: size;
     background:
       radial-gradient(1000px 500px at 50% 42%, rgba(255, 255, 255, 0.035), transparent 70%),
       #07080a;
@@ -1138,7 +1228,7 @@
   .player-frame {
     position: relative;
     width: 100%;
-    width: min(100%, calc(100cqh * var(--ar, 1.7778)));
+    max-width: 100%;
     max-height: 100%;
     aspect-ratio: var(--ar, 1.7778);
     background: #000;
@@ -1147,6 +1237,57 @@
   .player {
     position: absolute;
     inset: 0;
+  }
+
+  .play-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.42));
+    pointer-events: none;
+  }
+
+  .play-button {
+    display: grid;
+    place-items: center;
+    width: 84px;
+    height: 84px;
+    padding: 0;
+    border-radius: 50%;
+    background: var(--rec);
+    color: #170403;
+    pointer-events: auto;
+    box-shadow:
+      0 14px 44px rgba(0, 0, 0, 0.45),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    transition:
+      transform 0.16s var(--ease),
+      background 0.16s var(--ease);
+  }
+
+  .play-button svg {
+    margin-left: 3px;
+  }
+
+  .play-button:hover {
+    transform: scale(1.04);
+    background: var(--rec-bright);
+  }
+
+  .play-button:active {
+    transform: scale(0.98);
+  }
+
+  .play-label {
+    font-size: 8.5px;
+    letter-spacing: 0.18em;
+    color: rgba(255, 255, 255, 0.78);
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.6);
   }
 
   .take-badge {
@@ -1309,8 +1450,8 @@
     align-items: center;
     justify-content: center;
     gap: 5px;
-    height: 34px;
-    min-width: 34px;
+    height: 38px;
+    min-width: 38px;
     padding: 0 8px;
     border: 1px solid var(--line);
     border-radius: 8px;
@@ -1381,7 +1522,7 @@
     display: inline-flex;
     align-items: center;
     gap: 7px;
-    height: 34px;
+    height: 38px;
     padding: 0 13px;
     border-radius: 8px;
     background: var(--rec);
@@ -1601,7 +1742,7 @@
     margin-top: 16px;
     font-size: 9.5px;
     letter-spacing: 0.06em;
-    color: #585d66;
+    color: #6f747e;
   }
 
   .kbd-hint {
@@ -1862,7 +2003,7 @@
 
   .group-hint {
     font-size: 9.5px;
-    color: #565b64;
+    color: #6f747e;
     white-space: nowrap;
   }
 
@@ -1910,7 +2051,7 @@
     margin-top: 7px;
     font-size: 9.5px;
     line-height: 1.5;
-    color: #5f646d;
+    color: #757a84;
   }
 
   .rows {
@@ -1943,7 +2084,7 @@
 
   .row-hint {
     font-size: 9.5px;
-    color: #5f646d;
+    color: #757a84;
   }
 
   .seg {
@@ -2034,7 +2175,7 @@
   .size-detail {
     font-size: 8.5px;
     letter-spacing: -0.03em;
-    color: #565b64;
+    color: #6f747e;
   }
 
   .size.selected {
@@ -2191,7 +2332,7 @@
   .estimate-sub {
     margin: 2px 0 9px;
     font-size: 9px;
-    color: #565b64;
+    color: #6f747e;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2377,7 +2518,7 @@
     font-size: 8.5px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: #565b64;
+    color: #6f747e;
     margin-right: 2px;
   }
 
@@ -2524,6 +2665,47 @@
 
     .idle-actions {
       gap: 8px;
+    }
+
+    .chrome-record {
+      height: 32px;
+      padding: 0 10px;
+      font-size: 9.5px;
+    }
+
+    .dock .icon-btn {
+      height: 42px;
+      min-width: 42px;
+    }
+
+    .dock .stop-btn {
+      height: 42px;
+      padding: 0 14px;
+    }
+
+    .seg button {
+      height: 30px;
+    }
+
+    .seg.mini button {
+      height: 28px;
+    }
+
+    .take-actions .btn {
+      min-height: 40px;
+    }
+
+    .file-pill {
+      height: 32px;
+    }
+
+    .play-button {
+      width: 68px;
+      height: 68px;
+    }
+
+    .play-label {
+      font-size: 8px;
     }
   }
 </style>
